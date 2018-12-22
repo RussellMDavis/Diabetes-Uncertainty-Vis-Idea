@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<!-- Example based on http://bl.ocks.org/weiglemc/6185069 -->
+
+<html>
+
+<meta charset="utf-8">
+
+
+<style>
+
+.brushed {
+    fill: none;
+    opacity: 1.0;
+}
+
+.non_brushed {
+    opacity: 0.4;
+}
+
+
+.ticks {
+  font: 10px sans-serif;
+}
+
+.track,
+.track-inset,
+.track-overlay {
+  stroke-linecap: round;
+}
+
+.track {
+  stroke: #000;
+  stroke-opacity: 0.3;
+  stroke-width: 10px;
+}
+
+.track-inset {
+  stroke: #ddd;
+  stroke-width: 8px;
+}
+
+.track-overlay {
+  pointer-events: stroke;
+  stroke-width: 50px;
+  stroke: transparent;
+}
+
+.handle {
+  fill: #fff;
+  stroke: #000;
+  stroke-opacity: 0.5;
+  stroke-width: 1.25px;
+}
+
+line.errorLine {
+      stroke: red;
+      stroke-width: 2px;
+      stroke-dasharray: 2,2;
+    }
+rect.timeBars {
+  fill: orchid;
+  opacity: 0.5;
+}
+line.inactive {
+    display: none;
+}
+
+.black{
+  fill: none;
+}
+line.active{
+
+}
+circle {
+  fill-opacity: .75;
+  stroke: #000;
+}
+
+circle.inactive {
+  display: none;
+}
+
+circle.active{}
+
+body {
+  font: 11px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  stroke-width: 2px;
+  shape-rendering: crispEdges;
+}
+
+line.thresholdLine {
+      stroke: black;
+      stroke-dasharray: 2,2;
+      stroke-width: 2px;
+    }
+
+.daySelector{
+  display: inline-block;
+  width: 1000px;
+  height: 20px;
+
+}
+.bglGraph{
+  display: inline-block;
+  width: 800px;
+  height: 400px;
+}
+
+.bglHist{
+  display: inline-block;
+  width: 800px;
+  height: 400px;
+}
+
+.errorSlider{
+  display: inline-block;
+  width: 800px;
+  height: 100px;
+}
+.timesBar {
+  display: inline-block;
+  width: 600px;
+  height: 300px;
+}
+
+
+</style>
+
+<body>
+<div class="daySelector" id="daySelector"></div>
+<div class = "bglGraph" id="bglGraph"></div>
+<div class = "bglHist" id="bglHist"></div>
+<div class = "errorSlider" id="errorSlider"></div>
+<div class = "timesBar" id="timesBar"></div>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+
+
+
+<script>
+
+
+var day = 1,
+    errorSet = 0,
+    timeCount = [0, 0, 0, 0],
+    barWidth = timesWidth / 8;
+
+var graphMargin = {top: 20, right: 20, bottom: 40, left: 50},
+    width = 700 - graphMargin.left - graphMargin.right,
+    graphHeight = 400 - graphMargin.top - graphMargin.bottom,
+    histMargin = {top: 20, right: 20, bottom: 40, left: 50},
+    histHeight = 400 - histMargin.top - histMargin.bottom,
+    errorSliderMargin = {top: 00, right: 30, bottom: 40, left: 20},
+    errorSliderHeight = 200 - errorSliderMargin.top - errorSliderMargin.bottom,
+    timesMargin = {top: 20, right: 20, bottom: 40, left: 50},
+    timesWidth =  600 - timesMargin.left - timesMargin.right,
+    timesHeight = 350 - timesMargin.top - timesMargin.bottom;
+
+var xGraphValue = function(d) { return d.Hour;}, // data -> value
+    xGraphScale = d3.scaleLinear().range([0, width]).domain([-1, 25]),
+    xGraphMap = function(d) { return xGraphScale(xGraphValue(d));},
+    yGraphValue = function(d) { return d.BGLevel;}, // data -> value
+    yGraphScale = d3.scaleLinear().range([graphHeight, 0]).domain([0,400]),
+    yGraphMap = function(d) { return yGraphScale(yGraphValue(d));};
+
+var xHistScale = d3.scaleLinear().rangeRound([0, width]).domain([0, 400]),
+    yHistScale = d3.scaleLinear().range([histHeight, 0]);
+
+var xErrorSliderScale = d3.scaleLinear()
+    .domain([0, 20])
+    .range([0, width-errorSliderMargin.right])
+    .clamp(true);
+
+var xTimesScale = d3.scaleBand().domain(["Night", "Morning", "Afternoon", "Evening"])
+                  .rangeRound([0, timesWidth]).paddingInner(0.5);
+    yTimesScale = d3.scaleLinear().domain([0, 25]).range([timesHeight, 0]);
+
+var graphSVG = d3.select("#bglGraph").append("svg")
+    .attr("width", width + graphMargin.left + graphMargin.right)
+    .attr("height", graphHeight + graphMargin.top + graphMargin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + graphMargin.left + "," + graphMargin.top + ")");
+
+var histSVG = d3.select("#bglHist").append("svg")
+      .attr("width", width + histMargin.left + histMargin.right)
+      .attr("height", histHeight + histMargin.top + histMargin.bottom)
+    .append("g")
+        .attr("transform", "translate(" + histMargin.left + "," + histMargin.top + ")");
+
+var errorSliderSVG = d3.select("#errorSlider").append("svg")
+        .attr("width", width + errorSliderMargin.left + errorSliderMargin.right)
+        .attr("height", errorSliderHeight + errorSliderMargin.top + errorSliderMargin.bottom)
+      .append("g")
+        .attr("transform", "translate(" + errorSliderMargin.left + "," + errorSliderMargin.top + ")");
+
+var timeSVG = d3.select("#timesBar").append("svg")
+        .attr("width", timesWidth + timesMargin.left + timesMargin.right)
+        .attr("height", timesHeight + timesMargin.top + timesMargin.bottom)
+      .append("g")
+          .attr("transform", "translate(" + timesMargin.left + "," + timesMargin.top + ")");
+
+d3.csv("HW4T1DData.csv", function(error, data) {
+     data.forEach(function(d) {
+     d.Day = +d.Day;
+     d.Hour = +d.Hour;
+     d.mmolL = +d.mmolL;
+     d.BGLevel = +d.BGLevel;
+     d.errorLow = +d.errorLow;
+     d.errorHigh = +d.errorHigh;
+ });
+
+
+graphSVG.append("g")
+          .attr("transform", "translate(0," + graphHeight + ")")
+          .call(d3.axisBottom(xGraphScale))
+
+graphSVG.append("text")
+          .attr("transform",
+                "translate(" + (width/2) + " ," +
+               (graphHeight + graphMargin.top + 20) + ")")
+          .style("text-anchor", "middle")
+          .text("Hour");
+
+graphSVG.append("g")
+  .call(d3.axisLeft(yGraphScale));
+graphSVG.append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 0 - graphMargin.left)
+      .attr("x",0 - (graphHeight / 2))
+      .attr("dy", "1em")
+      .style("text-anchor", "middle")
+      .text("Blood Glucose Level");
+
+timeSVG.append("g")
+          .call(d3.axisLeft(yTimesScale));
+timeSVG.append("text")
+          .attr("transform",
+                "translate(" + (width/2.25) + " ," +
+                (timesHeight + timesMargin.top + 10) + ")")
+          .style("text-anchor", "middle")
+          .text("Time of Day");
+
+
+timeSVG.append("g")
+          .attr("transform", "translate(0," + timesHeight +")")
+          .call(d3.axisBottom(xTimesScale));
+
+timeSVG.append("text")
+          .attr("transform", "rotate(-90)")
+          .attr("y", 0 - timesMargin.left)
+          .attr("x",0 - (timesHeight / 2))
+          .attr("dy", "1em")
+          .style("text-anchor", "middle")
+          .text("Frequency");
+
+histSVG.append("g")
+         .attr("transform", "translate(0," + histHeight + ")")
+         .call(d3.axisBottom(xHistScale));
+
+histSVG.append("text")
+         .attr("transform", "rotate(-90)")
+         .attr("y", 0 - histMargin.left)
+         .attr("x",0 - (histHeight / 2))
+         .attr("dy", "1em")
+         .style("text-anchor", "middle")
+         .text("Frequency");
+
+histSVG.append("text")
+         .attr("transform",
+               "translate(" + (width/2) + " ," +
+               (histHeight + histMargin.top + 10) + ")")
+         .style("text-anchor", "middle")
+         .text("Blood Sugar Level");
+
+histSVG.append("g")
+         .call(d3.axisLeft(yHistScale));
+
+ errorSliderSVG.append("text")
+         .attr("transform",
+               "translate(" + (width/2) + " ," +
+              (errorSliderHeight-20) + ")")
+         .style("text-anchor", "middle")
+         .text("Percent Error in Measurement");
+graphSVG.append("g").append("line")
+    .attr("class", "thresholdLine")
+    .attr('x1', 0)
+    .attr('x2', width)
+    .attr('y1', yGraphScale(70))
+    .attr('y2', yGraphScale(70));
+
+graphSVG.append("g").append("line")
+  .attr("class", "thresholdLine")
+  .attr('x1', 0)
+  .attr('x2', width)
+  .attr('y1', yGraphScale(200))
+  .attr('y2', yGraphScale(200));
+
+ function buildDrawings(chosenDay){
+      graphSVG.selectAll("circle").remove();
+      graphSVG.selectAll(".errorLine").remove();
+      timeSVG.selectAll("rect").remove();
+      histSVG.selectAll("rect").remove();
+      drawCircles(chosenDay);
+      drawTimeBars(chosenDay);
+      drawHist(chosenDay);
+      drawErrorLines(chosenDay);
+    }
+
+function recolorGraph(d){
+  resetGraphafterBar = graphSVG.selectAll("circle")
+  .style("fill", function(d){
+      if (d.BGLevel < 70 || d.BGLevel > 200)
+        color = "magenta";
+      else
+        color = "mediumseagreen";
+     return color;
+   })
+}
+function drawCircles(chosenDay){
+
+  var circleDraw = graphSVG.append("g").selectAll("circle")
+  .data(data.filter(function(d){return d.Day == chosenDay;}))
+    .enter().append("circle")
+    .attr("cx", xGraphMap)
+    .attr("cy", yGraphMap)
+    .attr("r", 5)
+    .attr("class","brushed")
+    .style("fill", function(d){
+        if (d.BGLevel < 70 || d.BGLevel > 200)
+          color = "magenta";
+        else
+          color = "mediumseagreen";
+       return color;
+     });
+//     setActiveCircles();
+};
+
+function drawErrorLines(chosenDay) {
+
+  graphSVG.append("g").selectAll(".errorLine")
+  .data(data.filter(function(d){return d.Day == chosenDay;}))
+    .enter().append("line")
+    .attr("class","errorLine")
+    .attr("x1", xGraphMap)
+    .attr("x2", xGraphMap)
+    .attr("y2", function(d){
+      return yGraphScale(d.BGLevel + d.BGLevel * errorSet / 100);
+    })
+    .attr("y1", function(d){
+      return yGraphScale(d.BGLevel - d.BGLevel * errorSet / 100);
+    });
+}
+
+
+function drawHist(chosenDay) {
+  histSVG.selectAll("rect").remove();
+  var errors = errorSet;
+  var values = [],
+      possibleValueHigh = 0;
+      possibleValueLow = 0;
+  function fillHistogram() {
+             graphSVG.selectAll(".brushed").each(function(d) {
+               possibleValueHigh = d.BGLevel + d.BGLevel * errorSet / 100;
+               possibleValueLow = d.BGLevel - d.BGLevel * errorSet / 100;
+                 if (errorSet < 1)
+                 values.push(d.BGLevel);
+                 else
+                    values.push(getPossibleValue(possibleValueLow, possibleValueHigh));
+                  });
+               }
+  function getPossibleValue(low, high){
+      var uncertaintyArray = [];
+      for (var i = low; i <= high; i++){
+          uncertaintyArray.push(i);}
+      var returnValue = uncertaintyArray[Math.floor(Math.random()*uncertaintyArray.length)];
+  //    var\ value = uncertaintyArray[Math.floor(Math.random()*uncertaintyArray.length)];
+      return returnValue;
+  }
+  fillHistogram();
+
+  var histBins = d3.histogram()
+      .domain(xHistScale.domain())
+      .thresholds(xHistScale.ticks(40))
+      (values);
+         // var histogram = d3.histogram()
+         //     .value(function(d) {
+         //          // graphSVG.selectAll(".brushed").each(function(d) {
+         //          //     console.log(values);
+         //          //     values.push(d.BGLevel);
+         //          //   })
+         //          //   console.log(values);
+         //            console.log("hellO");
+         //            return values; })
+         //     .domain(xHistScale.domain())
+         //     .thresholds(xHistScale.ticks(40));
+  //var histBins = histogram(data);
+
+  yHistScale.domain([0, d3.max(histBins, function(d) { return d.length;})]);
+  //console.log("Hist bins, "+bins);
+  //console.log("Hist day, "+chosenDay);
+  histSVG.append("g").selectAll("rect")
+    .data(histBins)
+    .enter().append("rect")
+      .attr("x", 1)
+      .attr("transform", function(d, i) {
+        return "translate(" + xHistScale(d.x0) + "," + yHistScale(d.length) + ")"; })
+      .attr("width", function(d) { return xHistScale(d.x1) - xHistScale(d.x0); })
+      .attr("height", function(d) { return histHeight - yHistScale(d.length); })
+      .attr("fill", function(d) {
+        if(d.x0 < 70 || d.x0 > 200)
+          color = "magenta";
+        else
+          color = "mediumseagreen";
+        return color;
+     })
+     .on("mouseover", function(d){
+       var lowX = d.x0,
+           highX = d.x1;
+          colorFromHist = graphSVG.selectAll("circle");
+          colorFromHist.attr("class","non_brushed");
+               colorFromHist.filter(function (d){
+
+                     inRange = false;;
+                if (d.BGLevel >= lowX && d.BGLevel <= highX)
+                  inRange = true;
+
+               return inRange;
+             })
+             .attr("class","brushed")
+             drawTimeBars();
+          })
+
+     }
+
+var errorSlider = errorSliderSVG.append("g")
+         .attr("class", "slider")
+         .attr("transform", "translate(" + errorSliderMargin.left + "," + errorSliderHeight / 2 + ")");
+
+
+errorSlider.append("line")
+    .attr("class", "track")
+    .attr("x1", xErrorSliderScale.range()[0])
+    .attr("x2", xErrorSliderScale.range()[1])
+  .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+    .attr("class", "track-inset")
+  .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+    .attr("class", "track-overlay")
+    .call(d3.drag()
+        .on("start.interrupt", function() { errorSlider.interrupt(); })
+        .on("start drag", function() { errorSetting(xErrorSliderScale.invert(d3.event.x)); }));
+
+errorSlider.insert("g", ".track-overlay")
+    .attr("class", "ticks")
+    .attr("transform", "translate(0," + 15 + ")")
+  .selectAll("text")
+  .data(xErrorSliderScale.ticks(4))
+  .enter().append("text")
+    .attr("x", xErrorSliderScale)
+    .attr("text-anchor", "middle")
+    .text(function(d) { return d + "%"; });
+
+var handle = errorSlider.insert("rect", ".track-overlay")
+    .attr("class", "handle")
+    .attr("x", 0)
+    .attr("y", -35)
+    .attr("width", 20)
+    .attr("height", 65)
+    .style("opacity", 0.5);
+
+// errorSlider.transition()
+//     .duration(750)
+//     .tween("errorSetting", function() {
+//       var i = d3.interpolate(0, 9.75);
+//       return function(t) { errorSetting(i(t)); };
+//     })
+
+function errorSetting(h) {
+  handle.attr("x", xErrorSliderScale(h));
+  errorSet = h;
+  drawHist();
+  graphSVG.selectAll(".errorLine")
+    .attr("y2", function(d){
+      return yGraphScale(d.BGLevel + d.BGLevel * errorSet / 100);
+    })
+    .attr("y1", function(d){
+      return yGraphScale(d.BGLevel - d.BGLevel * errorSet / 100);
+    });
+
+}
+
+function drawTimeBars() {
+    timeSVG.selectAll("rect").remove();
+    updateTimesBar();
+    timeSVG.append("g").selectAll("rect")
+      .data(timeCount)
+      .enter().append("rect")
+      .attr("class", "timeBars")
+      .attr("x", function(d, i) {
+        var dayTime;
+        if (i == 0)
+            dayTime = "Night";
+        else if (i == 1)
+              dayTime = "Morning";
+        else if (i== 2)
+              dayTime = "Afternoon";
+        else if (i == 3)
+              dayTime = "Evening";
+        return timesWidth / 30 + xTimesScale(dayTime);
+      })
+      .attr("y", function(d) {return yTimesScale(d);})
+      .attr("width", timesWidth / (3*timeCount.length) - 5)
+      .attr("height", function(d) {return timesHeight - yTimesScale(d)})
+      .on("mouseover", function(d, i) {
+        matchBartoGraph = graphSVG.selectAll(".brushed");
+             var hoveredTime;
+             if (i == 0)
+                 hoveredTime = "Night";
+             else if (i == 1)
+                   hoveredTime = "Morning";
+             else if (i== 2)
+                   hoveredTime = "Afternoon";
+             else if (i == 3)
+                   hoveredTime = "Evening";
+              matchBartoGraph.filter(function (d){
+                     var apTime = d.approxTime,
+                         isMatch;
+                   if (apTime == hoveredTime)
+                     isMatch = true;
+                  else
+                    isMatch = false;
+                  return isMatch})
+                .style("fill", "gold");
+              })
+      .on("mouseout", function(d){
+        recolorGraph();
+
+      })
+
+}
+
+function updateTimesBar() {
+  timeCount = [0, 0, 0, 0];
+
+  graphSVG.selectAll(".brushed").each(function(d) {
+
+      if (d.approxTime == "Night")
+          timeCount[0]++;
+      else if (d.approxTime == "Morning")
+          timeCount[1]++;
+      else if (d.approxTime == "Afternoon")
+          timeCount[2]++;
+      else if (d.approxTime == "Evening")
+          timeCount[3]++;
+  })
+};
+
+//setActiveCircles();
+//setActiveErrorLines();
+
+
+ function highlightBrushedCircles() {
+        brushedCircles = graphSVG.selectAll("circle");
+        brushedCircles.attr("class", "non_brushed");
+        var brush_coords = d3.brushSelection(this);
+        // style brushed circles
+        brushedCircles.filter(function (){
+                 var cx = d3.select(this).attr("cx"),
+                     cy = d3.select(this).attr("cy");
+                     return isBrushed(brush_coords, cx, cy);
+                   })
+                  .attr("class", "brushed");
+          drawTimeBars();
+          drawCircles();
+          drawHist();
+    }
+
+  var brush = d3.brush()
+//            .on("start", clearGraphBrushed)
+          .on("brush", highlightBrushedCircles);
+  //
+
+  graphSVG.append("g")
+      .call(brush);
+
+function isBrushed(brush_coords, cx, cy) {
+         var x0 = brush_coords[0][0],
+             x1 = brush_coords[1][0],
+             y0 = brush_coords[0][1],
+             y1 = brush_coords[1][1];
+        return x0 <= cx && cx <= x1 && y0 <= cy && cy <= y1;
+}
+
+
+
+var days = new Array(28);
+var day = 1;
+for(var i=0;i<days.length-1;i++){
+  days[i] = i+1;
+}
+
+var selector = d3.select('#daySelector')
+  .append('select')
+  	.attr('class','select')
+    .on('change',onchange)
+
+var dayOptions = selector
+  .selectAll('option')
+	.data(days).enter()
+	.append('option')
+		.text(function (d) { return d; });
+
+function onchange() {
+	selectValue = d3.select('select').property('value')
+  chosenDay = selectValue;
+  buildDrawings(chosenDay);
+}
+buildDrawings(day);
+
+
+});
+
+</script>
+
+</body>
+
+</html>
