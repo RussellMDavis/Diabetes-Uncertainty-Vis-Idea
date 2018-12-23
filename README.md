@@ -1,9 +1,9 @@
 Linked Views for Tracking Daily Diabetes Measurements 
 ===
 Found at:
-
+=
 https://RussellMDavis.github.io/Diabetes-Uncertainty-Vis-Idea/
-==
+=
 Summary:
 
 Type 1 Diabetes is often managed using a Continuous Glucose Monitor, which has proven to be more effective than most other
