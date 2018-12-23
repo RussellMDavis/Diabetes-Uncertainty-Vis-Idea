@@ -204,7 +204,7 @@ var timeSVG = d3.select("#timesBar").append("svg")
       .append("g")
           .attr("transform", "translate(" + timesMargin.left + "," + timesMargin.top + ")");
 
-d3.csv("HW4T1DData.csv", function(error, data) {
+d3.csv("T1DData.csv", function(error, data) {
      data.forEach(function(d) {
      d.Day = +d.Day;
      d.Hour = +d.Hour;
