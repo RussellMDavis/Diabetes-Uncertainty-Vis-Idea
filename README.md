@@ -1,5 +1,11 @@
-Linked Views for Tracking Daily Diabetes Measurements (found at https://russbdavis.github.io/04-MapsAndViews/)
+Linked Views for Tracking Daily Diabetes Measurements (found at https://RussellMDavis.github.io/Diabetes-Uncertainty-Vis-Idea/)
 ===
+Summary:
+
+Type 1 Diabetes is often managed using a Continuous Glucose Monitor, which has proven to be more effective than most other
+available tools.  However, CGM software lacks effective visualization and does not properly capture the uncertainty inherent
+in biological readings.  This set of visualizations is intended to address both concerns.
+
 USERS NOTE: THE DIAGRAMS ARE LINED UP BEST AND MOST EASILY VIEWED WHEN THE BROWSER IS SET AT 80% MAGNIFICATION.
 
 Managing Type 1 Diabetes is a life-long task that requires significant time investment for those with the condition.  Effective
@@ -68,20 +74,6 @@ aggregating the stated value of each point on the scatter plot into bins, it wil
 possible values for each point based on the error setting.  By changing the setting and seeing how the distribution changes,
 users can get an idea for what their distribution might be when accounting for uncertainty in measurements.
 
-Technical Achievement
-===
-
-In addition to having highly interactive designs, I generated 5 different features (date selection, scatter plot, histogram,
-bar chart, and error slider).  All of them are coded to proerly interact with the others and have various impacts on at least
-one but sometimes 2 or 3 other graphical entities.  Additionally, the visualizations were originally crafted to reflect a
-real-world problem, which required some careful deliberation about the proper techniques to be applied.
-
-Design Achievement
-===
-
-The visualizations were primarily created in order to be viewed and used by an audience with limited visual literacy, with
-colors, layout, sizing, and overall design chosen accordingly.  While the features are simple, they were chosen to be understandable,
-and the design is one that could be feasibly used in a semi-realistic context.
 
 References
 ===
