@@ -8,7 +8,7 @@ Type 1 Diabetes is often managed using a Continuous Glucose Monitor, which has p
 available tools.  However, CGM software lacks effective visualization and does not properly capture the uncertainty inherent
 in biological readings.  This set of visualizations is intended to address both concerns.
 
-USERS NOTE: THE DIAGRAMS ARE LINED UP BEST AND MOST EASILY VIEWED WHEN THE BROWSER IS SET AT 80% MAGNIFICATION.
+N.B.: THE DIAGRAMS ARE LINED UP BEST AND MOST EASILY VIEWED WHEN THE BROWSER IS SET AT 80% MAGNIFICATION.
 
 Managing Type 1 Diabetes is a life-long task that requires significant time investment for those with the condition.  Effective
 management usually involves retrospective analysis of trends in their blood sugar levels collected from medical devices.
