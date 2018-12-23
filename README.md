@@ -1,4 +1,4 @@
-[Linked Views for Tracking Daily Diabetes Measurements](https://RussellMDavis.github.io/Diabetes-Uncertainty-Vis-Idea/
+[Linked Views for Tracking Daily Diabetes Measurements](https://russellmdavis.github.io/Diabetes-Uncertainty-Vis-Idea/
 ) 
 ===
 
