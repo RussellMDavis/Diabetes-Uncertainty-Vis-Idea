@@ -1,8 +1,8 @@
-Linked Views for Tracking Daily Diabetes Measurements 
+![Linked Views for Tracking Daily Diabetes Measurements](https://RussellMDavis.github.io/Diabetes-Uncertainty-Vis-Idea/
+) 
 ===
 Found at:
-=
-https://RussellMDavis.github.io/Diabetes-Uncertainty-Vis-Idea/
+
 =
 Summary:
 
